@@ -94,33 +94,49 @@ tasks is slightly different between Sinatra and Rails.
 
 **Q2.1.** Where in the Rails app directory structure is the code corresponding
 to the `HangpersonGame` model?
+> app/models/hangperson_game.rb
 
 **Q2.2.** In what file is the code that most closely corresponds to the 
 logic in the Sinatra apps' `app.rb` file that handles incoming user
 actions?
+> app/controllers/game_controller.rb
 
 **Q2.3.** What class contains that code?
+> `GameController`
 
 **Q2.4.** From what other class (which is part of the Rails framework)
 does that class inherit? 
+> `ApplicationController`
 
 **Q2.5.** In what directory is the code corresponding to the Sinatra app's views
 (`new.erb`, `show.erb`, etc.)?  
+> app/views/game
 
 **Q2.6.** The filename suffixes
 for these views are different in Rails than they were in the Sinatra
 app.  What information does the rightmost suffix of the filename 
 (e.g.: in `foobar.abc.xyz`, the suffix `.xyz`) tell
 you about the file contents?  
+> what render engine used to generate output; in this case — `erb`
 
 **Q2.7.** What information does the  other suffix tell you about what
 Rails is being asked to do with the file?
+> `.html`: erb(`x.html.erb`) → `x.html`
 
 **Q2.8.** In what file is the information in the Rails app that maps
 routes (e.g. `GET /new`)  to controller actions?  
+> config/routes.rb
 
 **Q2.9.** What is the role of the `:as => 'name'` option in the route
 declarations of `config/routes.rb`?  (Hint: look at the views.)
+> hand pick a name for the route, rather than the default one;
+> then this name can be used in *named route helper*.
+
+e.g. 
+- `get '/some_resource' => 'model#action', as: :thing`
+- `thing_path()` => `'/some_resource'`
+
+ref: [Naming Routes](https://guides.rubyonrails.org/routing.html#naming-routes)
 
 ## 3. Session
 
@@ -132,6 +148,27 @@ game is replaced in the session after each action completes.
 are used for session management.  What is the closest equivalent in this
 Rails app, and in what
 file do we find the code that does it?
+> app/controllers/game_controller.rb
+```ruby
+class GameController < ApplicationController
+
+  before_action :get_game_from_session
+  after_action  :store_game_in_session
+  
+  private
+  
+  def get_game_from_session
+    @game = HangpersonGame.new('')
+    if !session[:game].blank?
+      @game = YAML.load(session[:game])
+    end
+  end
+
+  def store_game_in_session
+    session[:game] = @game.to_yaml
+  end
+  ...
+```
 
 **Q3.2.** A popular serialization format for exchanging data between Web
 apps is [JSON](https://en.wikipedia.org/wiki/JSON).  Why wouldn't it
@@ -142,6 +179,7 @@ restart your browser with a new Incognito/Private Browsing window, in
 order to clear out the `session[]`.  Based on the error messages you get
 when trying to use JSON serialization, you should be able to explain why
 YAML serialization works in this case but JSON doesn't.)
+> complex object `#to_json` isn't reversible
 
 ## 4. Views
 
@@ -157,14 +195,19 @@ Convention-over-Configuration rule that is at work here?)
 `form_tag`, even though it would be perfectly legal to use raw HTML
 `<form>` tags in Rails.  Can you think of a reason Rails might introduce
 this "level of indirection"?
+> legal;
+> in case developer forget `<form action=URL method=VERB>`,
+> if use `form_tag`, Rails can list overview of created forms?
 
 **Q4.3.** How are form elements such as text fields and buttons handled in
 Rails?  (Again, raw HTML would be legal, but what's the motivation
 behind the way Rails does it?)
+> automatic code gen, Rails make it closer to the model, reducing manual work
 
 **Q4.4.** In the Sinatra version, the `show`, `win` and `lose` views re-use the
 code in the `new` view that offers a button for starting a new game.
 What Rails mechanism allows those views to be re-used in the Rails version?  
+> same mechanism: `<%= render :template => 'game/new' %>`
 
 ## 5. Cucumber scenarios
 
@@ -180,4 +223,4 @@ Verify the Cucumber scenarios run and pass by running `rake cucumber`.
 **Q5.1.** What is a qualitative explanation for why the Cucumber scenarios and
 step definitions didn't need to be modified at all to work equally well
 with the Sinatra or Rails versions of the app?
-
+> scenarios are tested over the web interface, no touch anything underhook
